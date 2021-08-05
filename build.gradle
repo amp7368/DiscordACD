@@ -1,0 +1,46 @@
+plugins {
+    id 'java'
+}
+
+group 'apple.acd'
+version '1.0.BUILD-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
+}
+
+dependencies {
+    implementation 'net.dv8tion:JDA:4.3.0_304'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+}
+
+test {
+    useJUnitPlatform()
+}
+jar {
+    destinationDirectory = new File('C:\\Users\\Aaron\\Desktop\\Idea\\Minecraft\\DiscordBots\\DiscordACD\\build\\')
+}
+def filesToCopy = copySpec {
+    from jar.getArchiveFile()
+}
+
+task jarAndCopyFiles {
+    dependsOn(jar)
+    doLast {
+        ['C:\\Users\\Aaron\\Desktop\\Idea\\SpotifyAnalysis\\lib\\',
+         'C:\\Users\\Aaron\\Desktop\\Idea\\Minecraft\\DiscordBots\\CloverBot\\lib\\',
+         'C:\\Users\\Aaron\\Desktop\\Idea\\Minecraft\\DiscordBots\\BuildBot\\lib\\'].each { dest ->
+            {
+                copy {
+                    with filesToCopy
+                    into dest
+                }
+            }
+        }
+    }
+}
