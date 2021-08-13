@@ -8,26 +8,28 @@ import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
+import net.dv8tion.jda.api.interactions.components.ComponentInteraction;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Consumer;
 
 public abstract class ACDGui {
+    public static final int BUTTONS_IN_ACTION_ROW = 5;
+    public static final int ACTION_ROWS_IN_MESSAGE = 5;
+    public static final int MAX_OPTIONS_IN_SELECTION_MENU = 25;
+
     protected Message message = null;
 
     private long lastUpdated = System.currentTimeMillis();
 
     private final ACD acd;
     private final MessageChannel channel;
-    private final Map<DiscordEmoji, OnInteractionDo<MessageReactionAddEvent>> definedEmojiToReactionButton = new HashMap<>();
-    private final Map<String, OnInteractionDo<ButtonClickEvent>> idToButton = new HashMap<>();
-    private final Map<String, OnInteractionDo<SelectionMenuEvent>> idToMenu = new HashMap<>();
-    private final Map<String, OnInteractionDo<MessageReactionAddEvent>> emojiToReactionButton = new HashMap<>();
+    private final OnInteractionCompleteMap onInteractionMap = new OnInteractionCompleteMap();
+
     private final Collection<Emote> emotesOnMessage = new ArrayList<>();
     private final Collection<String> emojisOnMessage = new ArrayList<>();
 
@@ -52,16 +54,16 @@ public abstract class ACDGui {
             // if the method is a definedEmojiButton, register it as such
             GuiReactionEmoji definedEmojiButton = method.getAnnotation(GuiReactionEmoji.class);
             if (definedEmojiButton != null)
-                definedEmojiToReactionButton.put(definedEmojiButton.emote(), new OnInteractionDo<>(this, method));
+                onInteractionMap.put(MessageReactionAddEvent.class, definedEmojiButton.emote(), new OnInteractionDoSimple<>(this, method));
             GuiReactionCustomEmoji emojiButton = method.getAnnotation(GuiReactionCustomEmoji.class);
             if (emojiButton != null)
-                emojiToReactionButton.put(emojiButton.emote(), new OnInteractionDo<>(this, method));
+                onInteractionMap.put(MessageReactionAddEvent.class, emojiButton.emote(), new OnInteractionDoSimple<>(this, method));
             GuiButton actualButton = method.getAnnotation(GuiButton.class);
             if (actualButton != null)
-                idToButton.put(actualButton.id(), new OnInteractionDo<>(this, method));
+                onInteractionMap.put(ButtonClickEvent.class, actualButton.id(), new OnInteractionDoSimple<>(this, method));
             GuiMenu menuButton = method.getAnnotation(GuiMenu.class);
             if (menuButton != null)
-                idToMenu.put(menuButton.id(), new OnInteractionDo<>(this, method));
+                onInteractionMap.put(SelectionMenuEvent.class, menuButton.id(), new OnInteractionDoSimple<>(this, method));
         }
         acd.addReactable(this);
         initButtons();
@@ -90,6 +92,10 @@ public abstract class ACDGui {
         message.editMessage(makeMessage()).queue();
     }
 
+    protected void editAsReply(ComponentInteraction interaction) {
+        interaction.editMessage(makeMessage()).queue();
+    }
+
     public void addReaction(String emoji) {
         message.addReaction(emoji).queue();
         synchronized (emojisOnMessage) {
@@ -97,18 +103,42 @@ public abstract class ACDGui {
         }
     }
 
+    public <Key> void addManualButton(Consumer<ButtonClickEvent> consumer, Key key) {
+        addManualInteraction(ButtonClickEvent.class, key, new OnInteractionDoComplex<>(consumer));
+    }
+
+    public <Key> void addManualSimpleButton(Consumer<ButtonClickEvent> consumer, Key key) {
+        addManualButton(e -> {
+            consumer.accept(e);
+            editAsReply(e);
+        }, key);
+    }
+
+    public <Key> void addManualMenu(Consumer<SelectionMenuEvent> consumer, Key key) {
+        addManualInteraction(SelectionMenuEvent.class, key, new OnInteractionDoComplex<>(consumer));
+    }
+
+    public <Key> void addManualSimpleMenu(Consumer<SelectionMenuEvent> consumer, Key key) {
+        addManualMenu(e -> {
+            consumer.accept(e);
+            editAsReply(e);
+        }, key);
+    }
+
+    public <Key> void addManualReaction(Consumer<MessageReactionAddEvent> consumer, Key key) {
+        addManualInteraction(MessageReactionAddEvent.class, key, new OnInteractionDoComplex<>(consumer));
+    }
+
+    public <Key, Consumed> void addManualInteraction(Class<Consumed> eventType, Key key, OnInteractionDo<Consumed> onInteraction) {
+        onInteractionMap.put(eventType, key, onInteraction);
+    }
+
     public void onButtonClick(@NotNull ButtonClickEvent event) {
-        OnInteractionDo<ButtonClickEvent> button = idToButton.get(event.getButton().getId());
-        if (button != null) {
-            button.onInteraction(event);
-        }
+        onInteractionMap.onInteraction(event.getComponentId(), event);
     }
 
     public void onSelectionMenu(@NotNull SelectionMenuEvent event) {
-        OnInteractionDo<SelectionMenuEvent> menu = idToMenu.get(event.getComponentId());
-        if (menu != null) {
-            menu.onInteraction(event);
-        }
+        onInteractionMap.onInteraction(event.getComponentId(), event);
     }
 
     public void onReaction(@NotNull MessageReactionAddEvent event) {
@@ -123,22 +153,10 @@ public abstract class ACDGui {
                 definedEmoji = DiscordEmoji.get(emoji);
             } catch (IllegalArgumentException ignored) {
             }
-            if (definedEmoji != null) {
-                OnInteractionDo<MessageReactionAddEvent> button = this.definedEmojiToReactionButton.get(definedEmoji);
-                if (button != null) {
-                    button.onInteraction(event);
-                    removeReaction(event);
-                    return;
-                }
-            }
-            OnInteractionDo<MessageReactionAddEvent> button = this.emojiToReactionButton.get(emoji);
-            if (button != null) {
-                button.onInteraction(event);
+            if (onInteractionMap.onInteraction(definedEmoji == null ? emoji : definedEmoji, event)) {
                 removeReaction(event);
-                return;
             }
         }
-
         this.lastUpdated = System.currentTimeMillis();
     }
 
