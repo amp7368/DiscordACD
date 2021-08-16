@@ -23,7 +23,7 @@ test {
     useJUnitPlatform()
 }
 jar {
-    destinationDirectory = new File('C:\\Users\\smile\\Desktop\\Idea\\Minecraft\\DiscordBots\\DiscordACD\\build\\')
+    destinationDirectory = new File('C:\\Users\\Aaron\\Desktop\\Idea\\Minecraft\\DiscordBots\\DiscordACD\\build\\')
 }
 def filesToCopy = copySpec {
     from jar.getArchiveFile()
@@ -32,9 +32,10 @@ def filesToCopy = copySpec {
 task jarAndCopyFiles {
     dependsOn(jar)
     doLast {
-        ['C:\\Users\\smile\\Desktop\\Idea\\SpotifyAnalysis\\lib\\',
-         'C:\\Users\\smile\\Desktop\\Idea\\DiscordBots\\CloverBot\\lib\\',
-         'C:\\Users\\smile\\Desktop\\Idea\\DiscordBots\\BuildBot\\lib\\'].each { dest ->
+        ['C:\\Users\\Aaron\\Desktop\\Idea\\SpotifyAnalysis\\lib\\',
+         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\CloverBot\\lib\\',
+         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\BuildBot\\lib\\',
+         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\Excursion\\lib\\'].each { dest ->
             {
                 copy {
                     with filesToCopy

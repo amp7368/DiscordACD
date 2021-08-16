@@ -144,7 +144,6 @@ public class ACDCommand {
                     ACDParameterMessageEaten<?> eaten = this.typesRequired[i].converter().eatInput(event, contentRaw);
                     contentRaw = eaten.newInput();
                     arguments[i] = eaten.outputObject();
-                    System.out.println(eaten.outputObject());
                 } catch (IllegalArgumentException e) {
                     event.getChannel().sendMessage(overrideUsage.isEmpty() ? String.format(usageFormat,  usage) : overrideUsage).queue();
                     return;

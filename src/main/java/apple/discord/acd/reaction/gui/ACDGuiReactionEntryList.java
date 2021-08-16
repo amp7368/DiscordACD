@@ -1,7 +1,6 @@
 package apple.discord.acd.reaction.gui;
 
 import apple.discord.acd.ACD;
-import apple.discord.acd.reaction.buttons.GuiEntryStringable;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -9,16 +8,16 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import java.util.Comparator;
 import java.util.List;
 
-public abstract class ACDGuiEntryList<T extends GuiEntryStringable> extends ACDGuiPageable {
+public abstract class ACDGuiReactionEntryList<T extends GuiEntryStringable> extends ACDGuiReactionPageable {
     protected String border;
     protected List<T> entries;
 
-    public ACDGuiEntryList(ACD acd, MessageChannel message, List<T> entries) {
+    public ACDGuiReactionEntryList(ACD acd, MessageChannel message, List<T> entries) {
         super(acd, message);
         this.border = setBorder(entries);
     }
 
-    public ACDGuiEntryList(ACD acd, Message message, List<T> entries) {
+    public ACDGuiReactionEntryList(ACD acd, Message message, List<T> entries) {
         super(acd, message);
         this.border = setBorder(entries);
     }

@@ -26,7 +26,7 @@ public abstract class ACDGui {
 
     private long lastUpdated = System.currentTimeMillis();
 
-    private final ACD acd;
+    protected final ACD acd;
     private final MessageChannel channel;
     private final OnInteractionCompleteMap onInteractionMap = new OnInteractionCompleteMap();
 
