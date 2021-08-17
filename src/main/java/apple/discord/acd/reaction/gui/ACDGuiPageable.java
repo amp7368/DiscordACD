@@ -1,7 +1,6 @@
 package apple.discord.acd.reaction.gui;
 
 import apple.discord.acd.ACD;
-import apple.discord.acd.reaction.DiscordEmoji;
 import apple.discord.acd.reaction.buttons.GuiManualButton;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -12,13 +11,12 @@ import net.dv8tion.jda.api.interactions.components.ButtonStyle;
 import net.dv8tion.jda.internal.interactions.ButtonImpl;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
-public abstract class ACDGuiPageable<Page extends GuiPageMessageable> extends ACDGui implements GuiPageMessageable {
+public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageable {
     protected int page = 0;
-    protected List<DynamicPage<Page>> pagesList = new ArrayList<>();
+    protected List<DynamicPage<?>> pagesList = new ArrayList<>();
 
     public ACDGuiPageable(ACD acd, MessageChannel channel) {
         super(acd, channel);
@@ -28,27 +26,27 @@ public abstract class ACDGuiPageable<Page extends GuiPageMessageable> extends AC
         super(acd, message);
     }
 
-    protected void addPage(Page pageable) {
+    protected <Page extends GuiPageMessageable> void addPage(Page pageable) {
         this.pagesList.add(new DynamicPage<>(pageable));
     }
 
-    protected void addPage(int index, Page pageable) {
+    protected <Page extends GuiPageMessageable> void addPage(int index, Page pageable) {
         this.pagesList.add(index, new DynamicPage<>(pageable));
     }
 
-    protected void addPage(Supplier<Page> pageable) {
+    protected <Page extends GuiPageMessageable> void addPage(Supplier<Page> pageable) {
         this.pagesList.add(new DynamicPage<>(pageable));
     }
 
-    protected void addPage(int index, Supplier<Page> pageable) {
+    protected <Page extends GuiPageMessageable> void addPage(int index, Supplier<Page> pageable) {
         this.pagesList.add(index, new DynamicPage<>(pageable));
     }
 
-    protected void removePage(Page pageable) {
+    protected <Page extends GuiPageMessageable> void removePage(Page pageable) {
         this.pagesList.remove(new DynamicPage<>(pageable));
     }
 
-    protected void removePage(Supplier<Page> pageable) {
+    protected <Page extends GuiPageMessageable> void removePage(Supplier<Page> pageable) {
         this.pagesList.remove(new DynamicPage<>(pageable));
     }
 
@@ -58,21 +56,25 @@ public abstract class ACDGuiPageable<Page extends GuiPageMessageable> extends AC
 
     @Override
     public Message asMessage() {
-        return makeMessage();
+        return this.makeMessage();
     }
 
     @Override
     public Message makeMessage() {
-        if (pagesList.isEmpty()) {
-            return emptyPage();
-        }
         page = Math.max(0, Math.min(pagesList.size() - 1, page + 1));
-        Message message = pagesList.get(page).asMessage();
+        Message message = this.getPage().asMessage();
         MessageBuilder messageBuilder = new MessageBuilder(message);
         List<ActionRow> actionRows = new ArrayList<>(message.getActionRows());
-        actionRows.add(this.getNavigationRow());
+        ActionRow navigationRow = this.getNavigationRow();
+        if (navigationRow != null)
+            actionRows.add(navigationRow);
         messageBuilder.setActionRows(actionRows);
         return messageBuilder.build();
+    }
+
+    protected GuiPageMessageable getPage() {
+        if (pagesList.isEmpty()) return this::emptyPage;
+        return pagesList.get(page).getPage();
     }
 
     protected Message emptyPage() {
@@ -84,7 +86,7 @@ public abstract class ACDGuiPageable<Page extends GuiPageMessageable> extends AC
     }
 
     protected ActionRow getNavigationRow() {
-        return ActionRow.of(this.getBackButton(),this. getForwardButton());
+        return ActionRow.of(this.getBackButton(), this.getForwardButton());
     }
 
     protected ButtonImpl getBackButton() {
@@ -109,7 +111,7 @@ public abstract class ACDGuiPageable<Page extends GuiPageMessageable> extends AC
         editAsReply(event);
     }
 
-    private static class DynamicPage<Page extends GuiPageMessageable> implements GuiPageMessageable {
+    protected static class DynamicPage<Page extends GuiPageMessageable> implements GuiPageMessageable {
         public Supplier<Page> create;
         public Page created;
 
@@ -133,8 +135,7 @@ public abstract class ACDGuiPageable<Page extends GuiPageMessageable> extends AC
 
         @Override
         public int hashCode() {
-            getPage();
-            return this.create.hashCode();
+            return getPage().hashCode();
         }
 
         @Override

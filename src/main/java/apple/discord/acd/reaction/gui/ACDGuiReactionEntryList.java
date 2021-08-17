@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -41,12 +42,19 @@ public abstract class ACDGuiReactionEntryList<T extends GuiEntryStringable> exte
     @Override
     protected Message makeMessage() {
         int upper = Math.min(entries.size(), (page + 1) * getEntriesPerPage());
-        int lower = page * getEntriesPerPage();
+        List<GuiEntryNumbered<T>> entriesThisPage = new ArrayList<>(getEntriesPerPage());
+        for (int lower = page * getEntriesPerPage(); lower < upper; lower++) {
+            entriesThisPage.add(new GuiEntryNumbered<>(lower, entries.get(lower)));
+        }
+        return makeMessage(entriesThisPage);
+    }
+
+    protected Message makeMessage(List<GuiEntryNumbered<T>> entriesThisPage) {
         StringBuilder message = new StringBuilder(this.border);
         if (!this.border.isBlank()) {
             message.append("\n");
         }
-        for (int i = 0; lower < upper; i++, lower++) {
+        for (int i = 0; i < entriesThisPage.size(); i++) {
             String toAdd;
             if ((i + getFirstDashIndex()) % getEntriesPerSection() == 0) {
                 toAdd = getDivider();
@@ -56,14 +64,15 @@ public abstract class ACDGuiReactionEntryList<T extends GuiEntryStringable> exte
                 message.append(toAdd);
                 message.append("\n");
             }
-            T entry = entries.get(lower);
-             toAdd = entry.asEntryString(i, lower);
+            GuiEntryNumbered<T> entryNumbered = entriesThisPage.get(i);
+            T entry = entryNumbered.entry();
+
+            toAdd = entry.asEntryString(i, entryNumbered.index());
             if (message.length() + toAdd.length() >= Message.MAX_CONTENT_LENGTH - 4) {
                 break;
             }
             message.append(toAdd);
             message.append("\n");
-
         }
         if (!this.border.isBlank()) {
             message.append("```");
@@ -84,5 +93,8 @@ public abstract class ACDGuiReactionEntryList<T extends GuiEntryStringable> exte
     protected void sort(Comparator<T> comparator) {
         entries.sort(comparator);
         editMessage();
+    }
+
+    private record GuiEntryNumbered<T>(int index, T entry) {
     }
 }

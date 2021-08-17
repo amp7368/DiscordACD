@@ -1,10 +1,6 @@
 package apple.discord.acd.reaction.gui;
 
 import apple.discord.acd.ACD;
-import apple.discord.acd.handler.ACDExceptionHandler;
-import apple.discord.acd.handler.ACDMiscExceptionHandler;
-import apple.discord.acd.handler.DiscordExceptionHandler;
-import apple.discord.acd.handler.DiscordMiscExceptionHandler;
 import apple.discord.acd.reaction.DiscordEmoji;
 import apple.discord.acd.reaction.buttons.*;
 import net.dv8tion.jda.api.entities.*;
@@ -93,11 +89,11 @@ public abstract class ACDGui {
     protected abstract Message makeMessage();
 
     protected void editMessage() {
-        message.editMessage(makeMessage()).queue();
+        message.editMessage(this.makeMessage()).queue();
     }
 
-    protected void editAsReply(ComponentInteraction interaction) {
-        interaction.editMessage(makeMessage()).queue();
+    public void editAsReply(@NotNull ComponentInteraction interaction) {
+        interaction.editMessage(this.makeMessage()).queue();
     }
 
     public void addReaction(String emoji) {
