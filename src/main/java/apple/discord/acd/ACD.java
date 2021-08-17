@@ -8,8 +8,8 @@ import apple.discord.acd.handler.ACDBadArgumentsException;
 import apple.discord.acd.parameters.ACDParameterConvertersList;
 import apple.discord.acd.permission.ACDPermissionAllowed;
 import apple.discord.acd.permission.ACDPermissionsList;
-import apple.discord.acd.reaction.gui.ACDGui;
 import apple.discord.acd.reaction.ReactableMessageList;
+import apple.discord.acd.reaction.gui.ACDGui;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.entities.User;
@@ -64,6 +64,10 @@ public class ACD extends ListenerAdapter {
 
     public ACDPermissionsList getPermissions() {
         return permissions;
+    }
+
+    public ACDCommandList getCommandList() {
+        return commands;
     }
 
     @Override

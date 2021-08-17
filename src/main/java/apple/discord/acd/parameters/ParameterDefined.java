@@ -13,4 +13,6 @@ public @interface ParameterDefined {
     String splitter() default "";
 
     String id() default "";
+
+    boolean optional() default false;
 }

@@ -22,7 +22,12 @@ public @interface DiscordCommandAlias {
 
     String overlappingCommands() default "";
 
+    /**
+     * @return lower numbers attempted first
+     */
     int order() default 0;
 
     ChannelType[] channelType() default {};
+
+    String description() default "";
 }

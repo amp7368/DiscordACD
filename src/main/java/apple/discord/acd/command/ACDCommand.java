@@ -1,14 +1,17 @@
 package apple.discord.acd.command;
 
 import apple.discord.acd.ACD;
-import apple.discord.acd.parameters.ACDParameterConverter;
 import apple.discord.acd.handler.*;
+import apple.discord.acd.parameters.ACDParameterConverter;
 import apple.discord.acd.permission.ACDPermissionsList;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 
 public class ACDCommand {
@@ -80,6 +83,15 @@ public class ACDCommand {
     }
 
     public <T> ACDParameterConverter<?> getDefinedParameter(String id, Class<T> parameterType) {
-        return acd.getParameterConverters().get(id,parameterType);
+        return acd.getParameterConverters().get(id, parameterType);
+    }
+
+    public Collection<? extends CommandData> getUpdatedCommnads() {
+        List<CommandData> discordCommandData = new ArrayList<>();
+        for (ACDMethodCommand command : commands) {
+            discordCommandData.add(new CommandData(command.getName(), command.getDescription()).addOptions(command.getOptions()));
+            System.out.println(command.getName());
+        }
+        return discordCommandData;
     }
 }

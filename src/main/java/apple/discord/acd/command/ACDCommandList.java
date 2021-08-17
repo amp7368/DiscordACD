@@ -1,11 +1,11 @@
 package apple.discord.acd.command;
 
-import apple.discord.acd.handler.ACDBadArgumentsException;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 import java.util.*;
 
-import static apple.discord.acd.command.ACDCommandCalled.*;
+import static apple.discord.acd.command.ACDCommandCalled.CallingState;
 
 public class ACDCommandList {
     private final List<ACDCommand> commands = new ArrayList<>();
@@ -35,6 +35,14 @@ public class ACDCommandList {
 
     public void addCommand(ACDCommand command) {
         commands.add(command);
+    }
+
+    public Collection<? extends CommandData> getUpdatedCommnads() {
+        List<CommandData> discordCommandData = new ArrayList<>();
+        for (ACDCommand command : commands) {
+            discordCommandData.addAll(command.getUpdatedCommnads());
+        }
+        return discordCommandData;
     }
 
     public void addOverlappingCommand(ACDMethodCommand command) {

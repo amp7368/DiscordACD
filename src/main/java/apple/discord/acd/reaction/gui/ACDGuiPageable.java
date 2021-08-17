@@ -61,7 +61,7 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
 
     @Override
     public Message makeMessage() {
-        page = Math.max(0, Math.min(pagesList.size() - 1, page + 1));
+        page = Math.max(0, Math.min(pagesList.size() - 1, page));
         Message message = this.getPage().asMessage();
         MessageBuilder messageBuilder = new MessageBuilder(message);
         List<ActionRow> actionRows = new ArrayList<>(message.getActionRows());
