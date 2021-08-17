@@ -6,7 +6,7 @@ public class ACDPermissionAllowed extends ACDPermission {
     private static final ACDPermissionAllowed instance = new ACDPermissionAllowed();
 
     public ACDPermissionAllowed() {
-        super("");
+        super("", Integer.MIN_VALUE);
     }
 
     public static ACDPermissionAllowed getInstance() {

@@ -1,6 +1,10 @@
 package apple.discord.acd.reaction.gui;
 
 import apple.discord.acd.ACD;
+import apple.discord.acd.handler.ACDExceptionHandler;
+import apple.discord.acd.handler.ACDMiscExceptionHandler;
+import apple.discord.acd.handler.DiscordExceptionHandler;
+import apple.discord.acd.handler.DiscordMiscExceptionHandler;
 import apple.discord.acd.reaction.DiscordEmoji;
 import apple.discord.acd.reaction.buttons.*;
 import net.dv8tion.jda.api.entities.*;

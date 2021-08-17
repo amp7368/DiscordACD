@@ -3,6 +3,9 @@ package apple.discord.acd;
 
 import apple.discord.acd.command.ACDCommand;
 import apple.discord.acd.command.ACDCommandList;
+import apple.discord.acd.command.ACDMethodCommand;
+import apple.discord.acd.handler.ACDBadArgumentsException;
+import apple.discord.acd.parameters.ACDParameterConvertersList;
 import apple.discord.acd.permission.ACDPermissionAllowed;
 import apple.discord.acd.permission.ACDPermissionsList;
 import apple.discord.acd.reaction.gui.ACDGui;
@@ -24,6 +27,7 @@ public class ACD extends ListenerAdapter {
     private final ACDPermissionsList permissions = new ACDPermissionsList();
     private final ACDCommandList commands = new ACDCommandList();
     private final ReactableMessageList guis = new ReactableMessageList();
+    private final ACDParameterConvertersList parameterConverters = new ACDParameterConvertersList();
     private final String prefix;
     private final JDA client;
     private Consumer<Exception> messageReceivedExceptionHandler = null;
@@ -69,6 +73,8 @@ public class ACD extends ListenerAdapter {
                 return;
             }
             commands.dealWithCommands(event);
+        } catch (ACDBadArgumentsException e) {
+            event.getChannel().sendMessage(e.getMessage()).queue();
         } catch (Exception e) {
             if (this.messageReceivedExceptionHandler == null)
                 throw e;
@@ -126,6 +132,10 @@ public class ACD extends ListenerAdapter {
         commands.addCommand(command);
     }
 
+    public void addOverlappingCommand(ACDMethodCommand command) {
+        commands.addOverlappingCommand(command);
+    }
+
     public String getPrefix() {
         return prefix;
     }
@@ -144,5 +154,9 @@ public class ACD extends ListenerAdapter {
 
     public void removeReactable(ACDGui acdGui) {
         guis.remove(acdGui);
+    }
+
+    public ACDParameterConvertersList getParameterConverters() {
+        return parameterConverters;
     }
 }

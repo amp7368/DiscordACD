@@ -1,5 +1,7 @@
 package apple.discord.acd.command;
 
+import net.dv8tion.jda.api.entities.ChannelType;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -17,4 +19,10 @@ public @interface DiscordCommandAlias {
     String permission() default "";
 
     boolean ignoreCase() default true;
+
+    String overlappingCommands() default "";
+
+    int order() default 0;
+
+    ChannelType[] channelType() default {};
 }

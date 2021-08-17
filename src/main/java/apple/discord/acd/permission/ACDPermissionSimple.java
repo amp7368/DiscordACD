@@ -7,7 +7,12 @@ public class ACDPermissionSimple extends ACDPermission {
     private final Permission[] allowedUsers;
 
     public ACDPermissionSimple(String uniqueName, Permission... allowedUsers) {
-        super(uniqueName);
+        super(uniqueName, allowedUsers.length);
+        this.allowedUsers = allowedUsers;
+    }
+
+    public ACDPermissionSimple(String uniqueName, int strictness, Permission... allowedUsers) {
+        super(uniqueName, strictness);
         this.allowedUsers = allowedUsers;
     }
 

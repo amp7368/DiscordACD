@@ -1,4 +1,4 @@
-package apple.discord.acd.command;
+package apple.discord.acd.parameters;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
