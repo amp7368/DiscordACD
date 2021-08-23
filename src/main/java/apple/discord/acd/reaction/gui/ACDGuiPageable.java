@@ -11,6 +11,8 @@ import net.dv8tion.jda.api.interactions.components.ButtonStyle;
 import net.dv8tion.jda.internal.interactions.ButtonImpl;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -24,6 +26,14 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
 
     public ACDGuiPageable(ACD acd, Message message) {
         super(acd, message);
+    }
+
+    public ACDGuiPageable(ACD acd, MessageChannel channel, ACDGui parent) {
+        super(acd, channel, parent);
+    }
+
+    public ACDGuiPageable(ACD acd, Message message, ACDGui parent) {
+        super(acd, message, parent);
     }
 
     protected <Page extends GuiPageMessageable> void addPage(Page pageable) {
@@ -65,9 +75,10 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
         Message message = this.getPage().asMessage();
         MessageBuilder messageBuilder = new MessageBuilder(message);
         List<ActionRow> actionRows = new ArrayList<>(message.getActionRows());
-        ActionRow navigationRow = this.getNavigationRow();
-        if (navigationRow != null)
-            actionRows.add(navigationRow);
+        Collection<ActionRow> navigationRow = this.getNavigationRow();
+        if (navigationRow != null) {
+            actionRows.addAll(navigationRow);
+        }
         messageBuilder.setActionRows(actionRows);
         return messageBuilder.build();
     }
@@ -85,8 +96,8 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
     protected void initButtons() {
     }
 
-    protected ActionRow getNavigationRow() {
-        return ActionRow.of(this.getBackButton(), this.getForwardButton());
+    protected Collection<ActionRow> getNavigationRow() {
+        return Collections.singleton(ActionRow.of(this.getBackButton(), this.getForwardButton()));
     }
 
     protected ButtonImpl getBackButton() {

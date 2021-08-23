@@ -3,6 +3,7 @@ package apple.discord.acd;
 
 import apple.discord.acd.command.ACDCommand;
 import apple.discord.acd.command.ACDCommandList;
+import apple.discord.acd.command.ACDCommandLoggerList;
 import apple.discord.acd.command.ACDMethodCommand;
 import apple.discord.acd.handler.ACDBadArgumentsException;
 import apple.discord.acd.parameters.ACDParameterConvertersList;
@@ -26,6 +27,7 @@ import java.util.function.Consumer;
 public class ACD extends ListenerAdapter {
     private final ACDPermissionsList permissions = new ACDPermissionsList();
     private final ACDCommandList commands = new ACDCommandList();
+    private final ACDCommandLoggerList commandLogger = new ACDCommandLoggerList();
     private final ReactableMessageList guis = new ReactableMessageList();
     private final ACDParameterConvertersList parameterConverters = new ACDParameterConvertersList();
     private final String prefix;
@@ -34,6 +36,7 @@ public class ACD extends ListenerAdapter {
     private Consumer<Exception> addReactionExceptionHandler = null;
     private Consumer<Exception> buttonClickExceptionHandler = null;
     private Consumer<Exception> selectionMenuExceptionHandler = null;
+
 
     public ACD(String prefix, JDA client) {
         this.prefix = prefix;
@@ -62,6 +65,10 @@ public class ACD extends ListenerAdapter {
         this.selectionMenuExceptionHandler = exceptionHandler;
     }
 
+    public ACDCommandLoggerList getCommandLogger() {
+        return this.commandLogger;
+    }
+
     public ACDPermissionsList getPermissions() {
         return permissions;
     }
@@ -76,7 +83,7 @@ public class ACD extends ListenerAdapter {
             if (event.getAuthor().isBot()) {
                 return;
             }
-            commands.dealWithCommands(event);
+            commandLogger.log(event, commands.dealWithCommands(event));
         } catch (ACDBadArgumentsException e) {
             event.getChannel().sendMessage(e.getMessage()).queue();
         } catch (Exception e) {

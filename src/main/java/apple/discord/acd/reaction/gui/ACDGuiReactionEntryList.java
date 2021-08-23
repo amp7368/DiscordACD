@@ -95,6 +95,6 @@ public abstract class ACDGuiReactionEntryList<T extends GuiEntryStringable> exte
         editMessage();
     }
 
-    private record GuiEntryNumbered<T>(int index, T entry) {
+    public record GuiEntryNumbered<T>(int index, T entry) {
     }
 }

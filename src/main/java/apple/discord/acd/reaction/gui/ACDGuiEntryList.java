@@ -34,6 +34,8 @@ public abstract class ACDGuiEntryList extends ACDGuiPageable {
     public void back(ButtonClickEvent event) {
         if (this.getPage() instanceof ACDEntryPage entryPage) {
             entryPage.back(event);
+        } else {
+            backFullPage(event);
         }
     }
 
@@ -42,6 +44,8 @@ public abstract class ACDGuiEntryList extends ACDGuiPageable {
     public void forward(ButtonClickEvent event) {
         if (this.getPage() instanceof ACDEntryPage entryPage) {
             entryPage.forward(event);
+        } else {
+            forwardFullPage(event);
         }
     }
 }

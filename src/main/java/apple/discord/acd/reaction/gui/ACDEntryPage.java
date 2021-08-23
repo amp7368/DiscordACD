@@ -3,6 +3,7 @@ package apple.discord.acd.reaction.gui;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.components.ComponentInteraction;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,12 +57,18 @@ public class ACDEntryPage<Entry extends GuiEntryStringable> implements GuiPageMe
 
     public void back(ButtonClickEvent event) {
         if (entries.isEmpty()) this.indexInList = 0;
-        else this.indexInList = Math.min(entries.size() - 1, this.indexInList - getEntriesPerPage());
+        else this.indexInList = Math.max(0, this.indexInList - getEntriesPerPage());
+        editAsReply(event);
     }
 
     public void forward(ButtonClickEvent event) {
         if (entries.isEmpty()) this.indexInList = 0;
         else this.indexInList = Math.min(entries.size() - 1, this.indexInList + getEntriesPerPage());
+        editAsReply(event);
+    }
+
+    public void editAsReply(ComponentInteraction event) {
+        gui.editAsReply(event);
     }
 
     public int getEntriesPerPage() {

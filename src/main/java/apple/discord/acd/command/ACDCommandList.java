@@ -11,9 +11,10 @@ public class ACDCommandList {
     private final List<ACDCommand> commands = new ArrayList<>();
     private final Map<String, List<ACDMethodCommand>> overrideCommands = new HashMap<>();
 
-    public void dealWithCommands(MessageReceivedEvent event) {
+    public List<ACDCommandResponse> dealWithCommands(MessageReceivedEvent event) {
+        List<ACDCommandResponse> responses = new ArrayList<>();
         for (ACDCommand command : commands) {
-            command.dealWithCommand(event);
+            responses.addAll(command.dealWithCommand(event));
         }
         for (List<ACDMethodCommand> byName : overrideCommands.values()) {
             String usageMessage = null;
@@ -31,6 +32,7 @@ public class ACDCommandList {
                 event.getChannel().sendMessage(usageMessage).queue();
             }
         }
+        return responses;
     }
 
     public void addCommand(ACDCommand command) {

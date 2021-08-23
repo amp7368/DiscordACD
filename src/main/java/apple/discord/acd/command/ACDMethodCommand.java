@@ -31,7 +31,7 @@ public class ACDMethodCommand {
     private final String overrideCommandId;
     private final int order;
     private final ChannelType[] channelTypes;
-    private String description;
+    private final String description;
 
     public ACDMethodCommand(ACDCommand acdCommand, ACDCommand classObj, Method method, DiscordCommandAlias annotation) {
         this.acdCommand = acdCommand;
@@ -132,23 +132,21 @@ public class ACDMethodCommand {
                 }
             }
             if (fail) {
-                return new ACDCommandCalled(CallingState.NOT_CALLED, "");
+                return new ACDCommandCalled(CallingState.NOT_CALLED, "", ACDCommandResponse.EMPTY);
             }
         }
         if (permission.hasPermission(event.getMember())) {
             boolean shouldDealWith = false;
             int contentRemoved = 0;
             String contentRaw = event.getMessage().getContentRaw();
-            if (ignoreCase) {
-                for (String name : alias) {
+            for (String name : alias) {
+                if (ignoreCase) {
                     if (contentRaw.toLowerCase(Locale.ROOT).startsWith((acdCommand.getPrefix() + name).toLowerCase(Locale.ROOT))) {
                         shouldDealWith = true;
                         contentRemoved = (acdCommand.getPrefix() + name).length();
                         break;
                     }
-                }
-            } else {
-                for (String name : alias) {
+                } else {
                     if (contentRaw.startsWith(acdCommand.getPrefix() + name)) {
                         shouldDealWith = true;
                         contentRemoved = (acdCommand.getPrefix() + name).length();
@@ -164,7 +162,7 @@ public class ACDMethodCommand {
                 }
             }
         }
-        return new ACDCommandCalled(CallingState.NOT_CALLED, "");
+        return new ACDCommandCalled(CallingState.NOT_CALLED, "", ACDCommandResponse.EMPTY);
     }
 
     private ACDCommandCalled callWithArgs(MessageReceivedEvent event, String contentRaw) throws InvocationTargetException, IllegalAccessException {
@@ -183,15 +181,24 @@ public class ACDMethodCommand {
                 contentRaw = eaten.newInput();
                 arguments[i] = eaten.outputObject();
             } catch (IllegalArgumentException e) {
-                return new ACDCommandCalled(CallingState.COULD_SEND_USAGE, overrideUsage.isEmpty() ? String.format(usageFormat, usage) : overrideUsage);
+                return new ACDCommandCalled(CallingState.COULD_SEND_USAGE, overrideUsage.isEmpty() ? String.format(usageFormat, usage) : overrideUsage, null);
             }
         }
+        ACDCommandResponse response;
         if (method.getReturnType() == Void.class) {
             method.invoke(classObj, arguments);
+            response = ACDCommandResponse.EMPTY;
         } else {
-            method.invoke(classObj, arguments);
+            Object r = method.invoke(classObj, arguments);
+            if (r instanceof ACDCommandResponse cResponse) {
+                response = cResponse;
+                response.addAcdCommand(acdCommand);
+                response.addMethodCommand(this);
+            } else {
+                response = new ACDCommandResponse(r, acdCommand, this);
+            }
         }
-        return new ACDCommandCalled(CallingState.CALLED, "");
+        return new ACDCommandCalled(CallingState.CALLED, "", response);
     }
 
     public String getOverrideCommandId() {

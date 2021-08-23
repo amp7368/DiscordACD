@@ -19,6 +19,7 @@ public class ACDCommand {
     private final List<ACDMethodCommand> commands = new ArrayList<>();
     private final ACDPermissionsList permissions;
     private final String prefix;
+    private final List<CommandLogger> loggers = new ArrayList<>();
     protected ACD acd;
 
     public ACDCommand(ACD acd) {
@@ -51,10 +52,18 @@ public class ACDCommand {
         acd.addCommand(this);
     }
 
-    public void dealWithCommand(MessageReceivedEvent event) {
+    public void addLogger(CommandLogger logger) {
+        loggers.add(logger);
+    }
+
+    public List<ACDCommandResponse> dealWithCommand(MessageReceivedEvent event) {
+        List<ACDCommandResponse> responses = new ArrayList<>();
         for (ACDMethodCommand command : commands) {
             try {
-                command.dealWithCommand(event);
+                ACDCommandCalled commandCalled = command.dealWithCommand(event);
+                if (commandCalled.called() == ACDCommandCalled.CallingState.CALLED) {
+                    responses.add(commandCalled.response());
+                }
             } catch (Exception e) {
                 boolean shouldThrow = true;
                 for (ACDCanCatch<MessageReceivedEvent> handle : handlers) {
@@ -72,6 +81,12 @@ public class ACDCommand {
                 if (shouldThrow) throw e;
             }
         }
+        for (CommandLogger logger : loggers) {
+            for (ACDCommandResponse response : responses) {
+                logger.logAll(event, response);
+            }
+        }
+        return responses;
     }
 
     public ACDPermissionsList getPermissions() {
