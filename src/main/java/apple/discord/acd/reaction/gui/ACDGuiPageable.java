@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ButtonStyle;
 import net.dv8tion.jda.internal.interactions.ButtonImpl;
 
@@ -19,6 +20,7 @@ import java.util.function.Supplier;
 public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageable {
     protected int page = 0;
     protected List<DynamicPage<?>> pagesList = new ArrayList<>();
+    protected final List<DynamicPage<?>> subPages = new ArrayList<>();
 
     public ACDGuiPageable(ACD acd, MessageChannel channel) {
         super(acd, channel);
@@ -60,6 +62,27 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
         this.pagesList.remove(new DynamicPage<>(pageable));
     }
 
+    protected <Page extends GuiPageMessageable> void addSubPage(Page pageable) {
+        this.subPages.add(new DynamicPage<>(pageable));
+    }
+
+    protected <Page extends GuiPageMessageable> void addSubPage(Supplier<Page> pageable) {
+        this.subPages.add(new DynamicPage<>(pageable));
+    }
+
+    protected void removeSubPage() {
+        if (!this.subPages.isEmpty())
+            this.subPages.remove(0);
+    }
+
+    protected <Page extends GuiPageMessageable> void removeSubPage(Page pageable) {
+        this.subPages.remove(new DynamicPage<>(pageable));
+    }
+
+    protected <Page extends GuiPageMessageable> void removeSubPage(Supplier<Page> pageable) {
+        this.subPages.remove(new DynamicPage<>(pageable));
+    }
+
     protected void removePage(int index) {
         this.pagesList.remove(index);
     }
@@ -74,16 +97,21 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
         page = Math.max(0, Math.min(pagesList.size() - 1, page));
         Message message = this.getPage().asMessage();
         MessageBuilder messageBuilder = new MessageBuilder(message);
-        List<ActionRow> actionRows = new ArrayList<>(message.getActionRows());
-        Collection<ActionRow> navigationRow = this.getNavigationRow();
-        if (navigationRow != null) {
-            actionRows.addAll(navigationRow);
+        if (subPages.isEmpty()) {
+            List<ActionRow> actionRows = new ArrayList<>(message.getActionRows());
+            Collection<ActionRow> navigationRow = this.getNavigationRow();
+            if (navigationRow != null) {
+                actionRows.addAll(navigationRow);
+            }
+            messageBuilder.setActionRows(actionRows);
         }
-        messageBuilder.setActionRows(actionRows);
         return messageBuilder.build();
     }
 
     protected GuiPageMessageable getPage() {
+        if (!this.subPages.isEmpty()) {
+            return subPages.get(0).getPage();
+        }
         if (pagesList.isEmpty()) return this::emptyPage;
         return pagesList.get(page).getPage();
     }
@@ -97,7 +125,11 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
     }
 
     protected Collection<ActionRow> getNavigationRow() {
-        return Collections.singleton(ActionRow.of(this.getBackButton(), this.getForwardButton()));
+        Button back = this.getBackButton();
+        Button forward = this.getForwardButton();
+        if (this.page == 0) back = back.asDisabled();
+        if (this.page == pagesList.size() - 1) forward = forward.asDisabled();
+        return Collections.singleton(ActionRow.of(back, forward));
     }
 
     protected ButtonImpl getBackButton() {
@@ -112,13 +144,19 @@ public abstract class ACDGuiPageable extends ACDGui implements GuiPageMessageabl
 
     @GuiManualButton
     public void back(ButtonClickEvent event) {
-        page = Math.max(0, page - 1);
+        if (!this.subPages.isEmpty())
+            removeSubPage();
+        else
+            page = Math.max(0, page - 1);
         editAsReply(event);
     }
 
     @GuiManualButton
     public void forward(ButtonClickEvent event) {
-        page = Math.max(0, Math.min(pagesList.size() - 1, page + 1));
+        if (!this.subPages.isEmpty())
+            removeSubPage();
+        else
+            page = Math.max(0, Math.min(pagesList.size() - 1, page + 1));
         editAsReply(event);
     }
 

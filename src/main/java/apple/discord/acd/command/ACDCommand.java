@@ -58,11 +58,16 @@ public class ACDCommand {
 
     public List<ACDCommandResponse> dealWithCommand(MessageReceivedEvent event) {
         List<ACDCommandResponse> responses = new ArrayList<>();
+        String usageMessage = null;
+        boolean wasCalled = false;
         for (ACDMethodCommand command : commands) {
             try {
                 ACDCommandCalled commandCalled = command.dealWithCommand(event);
                 if (commandCalled.called() == ACDCommandCalled.CallingState.CALLED) {
                     responses.add(commandCalled.response());
+                    wasCalled = true;
+                } else if (usageMessage == null && commandCalled.called() == ACDCommandCalled.CallingState.COULD_SEND_USAGE) {
+                    usageMessage = commandCalled.usageMessage();
                 }
             } catch (Exception e) {
                 boolean shouldThrow = true;
@@ -86,6 +91,9 @@ public class ACDCommand {
                 logger.logAll(event, response);
             }
         }
+        if (!wasCalled && usageMessage != null) {
+            event.getChannel().sendMessage(usageMessage).queue();
+        }
         return responses;
     }
 
@@ -105,7 +113,6 @@ public class ACDCommand {
         List<CommandData> discordCommandData = new ArrayList<>();
         for (ACDMethodCommand command : commands) {
             discordCommandData.add(new CommandData(command.getName(), command.getDescription()).addOptions(command.getOptions()));
-            System.out.println(command.getName());
         }
         return discordCommandData;
     }

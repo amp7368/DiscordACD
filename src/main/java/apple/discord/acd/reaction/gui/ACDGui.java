@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public abstract class ACDGui {
+public abstract class ACDGui implements GuiPageMessageable {
     public static final int BUTTONS_IN_ACTION_ROW = 5;
     public static final int ACTION_ROWS_IN_MESSAGE = 5;
     public static final int MAX_OPTIONS_IN_SELECTION_MENU = 25;
@@ -88,7 +88,8 @@ public abstract class ACDGui {
                 if (menuButton != null)
                     addManualInteraction(SelectionMenuEvent.class, menuButton.id(), new OnInteractionDoSimple<>(this, method));
             }
-            acd.addReactable(this);
+            if (parent == null)
+                acd.addReactable(this);
             initButtons();
         } catch (PermissionException e) {
             onPermissionException(e, ActionBeingPerformed.MAKE_FIRST_MESSAGE);
@@ -119,12 +120,19 @@ public abstract class ACDGui {
         }
     }
 
+    @Override
+    public Message asMessage() {
+        return this.makeMessage();
+    }
 
     protected abstract Message makeMessage();
 
     protected void editMessage() {
         try {
-            message.editMessage(this.makeMessage()).queue();
+            if (parent == null)
+                message.editMessage(this.makeMessage()).queue();
+            else
+                parent.editMessage();
         } catch (PermissionException e) {
             onPermissionException(e, ActionBeingPerformed.EDIT_MESSAGE);
         } catch (RuntimeException e) {
@@ -186,8 +194,8 @@ public abstract class ACDGui {
         addManualInteraction(MessageReactionAddEvent.class, key, new OnInteractionDoComplex<>(consumer));
     }
 
-    public <Key, Consumed> void addManualInteraction(Class<Consumed> eventType, Key
-            key, OnInteractionDo<Consumed> onInteraction) {
+    public <Key, Consumed> void addManualInteraction(Class<Consumed> eventType, Key key,
+                                                     OnInteractionDo<Consumed> onInteraction) {
         if (parent == null)
             onInteractionMap.put(eventType, key, onInteraction);
         else

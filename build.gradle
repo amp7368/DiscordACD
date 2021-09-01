@@ -1,6 +1,7 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
+
 
 group 'apple.acd'
 version '1.0.BUILD-SNAPSHOT'
@@ -13,6 +14,7 @@ repositories {
     }
 }
 
+
 dependencies {
     implementation 'net.dv8tion:JDA:4.3.0_304'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
@@ -22,9 +24,16 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+
 jar {
+    java{
+        withSourcesJar()
+        withJavadocJar()
+    }
     destinationDirectory = new File('C:\\Users\\Aaron\\Desktop\\Idea\\Minecraft\\DiscordBots\\DiscordACD\\build\\')
 }
+
 def filesToCopy = copySpec {
     from jar.getArchiveFile()
 }

@@ -21,6 +21,7 @@ public class ACDCommandList {
             for (ACDMethodCommand command : byName) {
                 ACDCommandCalled acdCommandCalled = command.dealWithCommand(event);
                 if (acdCommandCalled.called() == CallingState.CALLED) {
+                    responses.add(acdCommandCalled.response());
                     usageMessage = null;
                     break;
                 }

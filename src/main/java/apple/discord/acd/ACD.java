@@ -11,11 +11,16 @@ import apple.discord.acd.permission.ACDPermissionAllowed;
 import apple.discord.acd.permission.ACDPermissionsList;
 import apple.discord.acd.reaction.ReactableMessageList;
 import apple.discord.acd.reaction.gui.ACDGui;
+import apple.discord.acd.text.ACDChannelListener;
+import apple.discord.acd.text.ACDChannelListenerList;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -30,12 +35,14 @@ public class ACD extends ListenerAdapter {
     private final ACDCommandLoggerList commandLogger = new ACDCommandLoggerList();
     private final ReactableMessageList guis = new ReactableMessageList();
     private final ACDParameterConvertersList parameterConverters = new ACDParameterConvertersList();
+    private final ACDChannelListenerList channelListeners = new ACDChannelListenerList();
     private final String prefix;
     private final JDA client;
     private Consumer<Exception> messageReceivedExceptionHandler = null;
     private Consumer<Exception> addReactionExceptionHandler = null;
     private Consumer<Exception> buttonClickExceptionHandler = null;
     private Consumer<Exception> selectionMenuExceptionHandler = null;
+    private long testGuildId = 0;
 
 
     public ACD(String prefix, JDA client) {
@@ -43,6 +50,11 @@ public class ACD extends ListenerAdapter {
         this.client = client;
         ACDPermissionAllowed.init();
         this.client.addEventListener(this);
+    }
+
+    public ACD(String prefix, JDA client, long testGuildId) {
+        this(prefix, client);
+        this.testGuildId = testGuildId;
     }
 
     public void setUncaughtExceptionLogger(Consumer<Exception> exceptionHandler) {
@@ -78,11 +90,28 @@ public class ACD extends ListenerAdapter {
     }
 
     @Override
+    public void onSlashCommand(@NotNull SlashCommandEvent event) {
+
+    }
+
+    @Override
+    public void onReady(@NotNull ReadyEvent event) {
+        Guild testGuild = this.client.getGuildById(testGuildId);
+        if (testGuild != null) {
+            testGuild.updateCommands().addCommands(commands.getUpdatedCommnads()).queue();
+        } else {
+            System.err.println("There is no guild with id " + testGuildId);
+        }
+        this.client.updateCommands().addCommands(commands.getUpdatedCommnads()).queue();
+    }
+
+    @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
         try {
             if (event.getAuthor().isBot()) {
                 return;
             }
+            channelListeners.dealWithMessage(event);
             commandLogger.log(event, commands.dealWithCommands(event));
         } catch (ACDBadArgumentsException e) {
             event.getChannel().sendMessage(e.getMessage()).queue();
@@ -169,5 +198,18 @@ public class ACD extends ListenerAdapter {
 
     public ACDParameterConvertersList getParameterConverters() {
         return parameterConverters;
+    }
+
+
+    public void addChannelListener(long channelId, ACDChannelListener listener) {
+        getChannelListeners().addListener(channelId, listener);
+    }
+
+    public ACDChannelListenerList getChannelListeners() {
+        return channelListeners;
+    }
+
+    public void removeChannelListener(ACDChannelListener listener) {
+        getChannelListeners().removeListener(listener);
     }
 }

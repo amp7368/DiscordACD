@@ -32,7 +32,7 @@ public class ReactableMessageList {
                     e.printStackTrace();
                 }
             }
-        });
+        }).start();
     }
 
     public void remove(ACDGui gui) {

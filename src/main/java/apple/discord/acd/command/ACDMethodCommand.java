@@ -1,22 +1,19 @@
 package apple.discord.acd.command;
 
 import apple.discord.acd.command.ACDCommandCalled.CallingState;
-import apple.discord.acd.parameters.*;
+import apple.discord.acd.parameters.ACDParameter;
+import apple.discord.acd.parameters.ACDParameterMessageEaten;
 import apple.discord.acd.permission.ACDPermission;
 import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Locale;
-import java.util.function.Function;
 
 public class ACDMethodCommand {
     private final ACDCommand acdCommand;
@@ -46,81 +43,9 @@ public class ACDMethodCommand {
         this.channelTypes = annotation.channelType();
         this.description = annotation.description();
         this.permission = acdCommand.getPermissions().getPermission(annotation.permission());
-        Parameter[] parameters = this.method.getParameters();
-        this.typesRequired = new ACDParameter[parameters.length];
-        for (int i = 0; i < parameters.length; i++) {
-            Class<?> parameterType = parameters[i].getType();
-            ParameterVargs vargsAnnotation = parameters[i].getAnnotation(ParameterVargs.class);
-            if (vargsAnnotation == null) {
-                ParameterSingle singleAnnotation = parameters[i].getAnnotation(ParameterSingle.class);
-                if (singleAnnotation == null) {
-                    ParameterDefined parameterAnnotation = parameters[i].getAnnotation(ParameterDefined.class);
-                    if (parameterAnnotation == null) {
-                        if (parameterType == MessageReceivedEvent.class) {
-                            // requires the event as the message
-                            this.typesRequired[i] = new ACDParameter<>("", "", (event, s) -> new ACDParameterMessageEaten<>(s, event), null);
-                        } else if (parameterType == Member.class) {
-                            this.typesRequired[i] = new ACDParameter<>("", "", (event, s) -> {
-                                Member member = event.getMember();
-                                if (member == null) throw new IllegalArgumentException("Member is null");
-                                return new ACDParameterMessageEaten<>(s, member);
-                            }, null);
-                        } else {
-                            throw new IllegalStateException("The annotation for the parameter is invalid");
-                        }
-                    } else {
-                        this.typesRequired[i] = new ACDParameter<>(
-                                parameterAnnotation.usage(),
-                                parameterAnnotation.splitter(),
-                                acdCommand.getDefinedParameter(parameterAnnotation.id(), parameterType),
-                                OptionType.STRING
-                        );
-                    }
-                } else {
-                    String splitter = singleAnnotation.splitter();
-                    String usage = singleAnnotation.usage();
-                    // requires a word from the input
-                    Function<String, ?> parse;
-                    OptionType optionType;
-                    if (parameterType == long.class || parameterType == Long.class) {
-                        parse = Long::parseLong;
-                        optionType = OptionType.INTEGER;
-                    } else if (parameterType == double.class || parameterType == Double.class) {
-                        parse = Double::parseDouble;
-                        optionType = OptionType.INTEGER;
-                    } else if (parameterType == float.class || parameterType == Float.class) {
-                        parse = Float::parseFloat;
-                        optionType = OptionType.INTEGER;
-                    } else if (parameterType == int.class || parameterType == Integer.class) {
-                        parse = Integer::parseInt;
-                        optionType = OptionType.INTEGER;
-                    } else if (parameterType == short.class || parameterType == Short.class) {
-                        parse = Short::parseShort;
-                        optionType = OptionType.INTEGER;
-                    } else if (parameterType == byte.class || parameterType == Byte.class) {
-                        parse = Byte::parseByte;
-                        optionType = OptionType.INTEGER;
-                    } else if (parameterType == boolean.class || parameterType == Boolean.class) {
-                        parse = Boolean::parseBoolean;
-                        optionType = OptionType.BOOLEAN;
-                    } else {
-                        parse = parameterType::cast;
-                        optionType = OptionType.STRING;
-                    }
-                    this.typesRequired[i] = new ACDParameter<>(usage, splitter, new ACDParameterConverterSingle<>(parse, splitter), optionType);
-                }
-            } else {
-                String usage = vargsAnnotation.usage();
-                boolean nonEmpty = vargsAnnotation.nonEmpty();
-                this.typesRequired[i] = new ACDParameter<>(usage, "", (event, input) -> {
-                    if (nonEmpty && input.isBlank())
-                        throw new IllegalArgumentException("the input has a empty String in a nonEmpty required parameter");
-                    return new ACDParameterMessageEaten<>("", input);
-                }, OptionType.STRING);
-            }
-
-        }
+        this.typesRequired = ACDParameter.getParameterTypesRequired(this.method, this.acdCommand::getDefinedParameter);
     }
+
 
     public ACDCommandCalled dealWithCommand(MessageReceivedEvent event) {
         if (this.channelTypes.length != 0) {
@@ -135,28 +60,31 @@ public class ACDMethodCommand {
                 return new ACDCommandCalled(CallingState.NOT_CALLED, "", ACDCommandResponse.EMPTY);
             }
         }
+
         if (permission.hasPermission(event.getMember())) {
             boolean shouldDealWith = false;
             int contentRemoved = 0;
             String contentRaw = event.getMessage().getContentRaw();
+            String aliasUsed = "";
             for (String name : alias) {
+                aliasUsed = acdCommand.getPrefix() + name;
                 if (ignoreCase) {
-                    if (contentRaw.toLowerCase(Locale.ROOT).startsWith((acdCommand.getPrefix() + name).toLowerCase(Locale.ROOT))) {
+                    if (contentRaw.toLowerCase(Locale.ROOT).startsWith(aliasUsed.toLowerCase(Locale.ROOT))) {
                         shouldDealWith = true;
-                        contentRemoved = (acdCommand.getPrefix() + name).length();
+                        contentRemoved = aliasUsed.length();
                         break;
                     }
                 } else {
-                    if (contentRaw.startsWith(acdCommand.getPrefix() + name)) {
+                    if (contentRaw.startsWith(aliasUsed)) {
                         shouldDealWith = true;
-                        contentRemoved = (acdCommand.getPrefix() + name).length();
+                        contentRemoved = aliasUsed.length();
                         break;
                     }
                 }
             }
             if (shouldDealWith) {
                 try {
-                    return callWithArgs(event, contentRaw.substring(contentRemoved).trim());
+                    return callWithArgs(event, contentRaw.substring(contentRemoved).trim(), aliasUsed);
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     e.printStackTrace();
                 }
@@ -165,9 +93,9 @@ public class ACDMethodCommand {
         return new ACDCommandCalled(CallingState.NOT_CALLED, "", ACDCommandResponse.EMPTY);
     }
 
-    private ACDCommandCalled callWithArgs(MessageReceivedEvent event, String contentRaw) throws InvocationTargetException, IllegalAccessException {
+    private ACDCommandCalled callWithArgs(MessageReceivedEvent event, String contentRaw, String aliasUsed) throws InvocationTargetException, IllegalAccessException {
         Object[] arguments = new Object[this.typesRequired.length];
-        StringBuilder usage = new StringBuilder(acdCommand.getPrefix() + alias[0]);
+        StringBuilder usage = new StringBuilder(aliasUsed);
         String splitter = " ";
         for (int i = 0; i < this.typesRequired.length; i++) {
             // create the usage message as we parse this message
@@ -181,24 +109,43 @@ public class ACDMethodCommand {
                 contentRaw = eaten.newInput();
                 arguments[i] = eaten.outputObject();
             } catch (IllegalArgumentException e) {
-                return new ACDCommandCalled(CallingState.COULD_SEND_USAGE, overrideUsage.isEmpty() ? String.format(usageFormat, usage) : overrideUsage, null);
+                for (int j = i + 1; j < this.typesRequired.length; j++) {
+                    usage.append(splitter);
+                    usage.append(this.typesRequired[j].usage());
+                    splitter = this.typesRequired[j].splitter();
+                }
+                return new ACDCommandCalled(CallingState.COULD_SEND_USAGE, getUsageMessage(usage), null);
             }
         }
         ACDCommandResponse response;
         if (method.getReturnType() == Void.class) {
             method.invoke(classObj, arguments);
-            response = ACDCommandResponse.EMPTY;
+            response = ACDCommandResponse.empty();
+            response.addAcdCommand(acdCommand);
+            response.addMethodCommand(this);
         } else {
             Object r = method.invoke(classObj, arguments);
+
             if (r instanceof ACDCommandResponse cResponse) {
                 response = cResponse;
+                response.addAcdCommand(acdCommand);
+                response.addMethodCommand(this);
+                if (response.getCallingState() != null) {
+                    return new ACDCommandCalled(response.getCallingState(), getUsageMessage(usage), response);
+                }
+            } else if (r == null) {
+                response = ACDCommandResponse.empty();
                 response.addAcdCommand(acdCommand);
                 response.addMethodCommand(this);
             } else {
                 response = new ACDCommandResponse(r, acdCommand, this);
             }
         }
-        return new ACDCommandCalled(CallingState.CALLED, "", response);
+        return new ACDCommandCalled(CallingState.CALLED, getUsageMessage(usage), response);
+    }
+
+    private String getUsageMessage(StringBuilder usage) {
+        return overrideUsage.isEmpty() ? String.format(usageFormat, usage) : overrideUsage;
     }
 
     public String getOverrideCommandId() {

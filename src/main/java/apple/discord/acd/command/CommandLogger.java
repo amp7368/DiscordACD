@@ -10,4 +10,8 @@ public interface CommandLogger {
     default void logAll(@NotNull MessageReceivedEvent event, ACDCommandResponse response) {
         log(event, response);
     }
+
+    default boolean shouldLog(CommandLoggerLevel level) {
+        return true;
+    }
 }
