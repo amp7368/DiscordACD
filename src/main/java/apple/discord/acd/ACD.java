@@ -11,6 +11,9 @@ import apple.discord.acd.permission.ACDPermissionAllowed;
 import apple.discord.acd.permission.ACDPermissionsList;
 import apple.discord.acd.reaction.ReactableMessageList;
 import apple.discord.acd.reaction.gui.ACDGui;
+import apple.discord.acd.slash.ACDChoiceProviderList;
+import apple.discord.acd.slash.ACDSlashCommandList;
+import apple.discord.acd.slash.base.ACDSlashCommand;
 import apple.discord.acd.text.ACDChannelListener;
 import apple.discord.acd.text.ACDChannelListenerList;
 import net.dv8tion.jda.api.JDA;
@@ -30,19 +33,25 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
 public class ACD extends ListenerAdapter {
+    public static final String SLASH_PATH_SEPARATOR = "/";
     private final ACDPermissionsList permissions = new ACDPermissionsList();
     private final ACDCommandList commands = new ACDCommandList();
     private final ACDCommandLoggerList commandLogger = new ACDCommandLoggerList();
     private final ReactableMessageList guis = new ReactableMessageList();
     private final ACDParameterConvertersList parameterConverters = new ACDParameterConvertersList();
     private final ACDChannelListenerList channelListeners = new ACDChannelListenerList();
+    private final ACDSlashCommandList slashCommands = new ACDSlashCommandList();
+    private final ACDChoiceProviderList choiceProviderList = new ACDChoiceProviderList();
     private final String prefix;
     private final JDA client;
     private Consumer<Exception> messageReceivedExceptionHandler = null;
     private Consumer<Exception> addReactionExceptionHandler = null;
     private Consumer<Exception> buttonClickExceptionHandler = null;
     private Consumer<Exception> selectionMenuExceptionHandler = null;
+    private Consumer<Exception> initializerExceptionHandler = null;
     private long testGuildId = 0;
+    private boolean isReady = false;
+    private boolean wantToUpdate = false;
 
 
     public ACD(String prefix, JDA client) {
@@ -58,7 +67,12 @@ public class ACD extends ListenerAdapter {
     }
 
     public void setUncaughtExceptionLogger(Consumer<Exception> exceptionHandler) {
-        messageReceivedExceptionHandler = addReactionExceptionHandler = buttonClickExceptionHandler = selectionMenuExceptionHandler = exceptionHandler;
+        messageReceivedExceptionHandler =
+                addReactionExceptionHandler =
+                        buttonClickExceptionHandler =
+                                selectionMenuExceptionHandler =
+                                        initializerExceptionHandler =
+                                                exceptionHandler;
     }
 
     public void setMessageReceivedExceptionHandler(Consumer<Exception> exceptionHandler) {
@@ -77,6 +91,10 @@ public class ACD extends ListenerAdapter {
         this.selectionMenuExceptionHandler = exceptionHandler;
     }
 
+    public void setInitializerExceptionHandler(Consumer<Exception> initializerExceptionHandler) {
+        this.initializerExceptionHandler = initializerExceptionHandler;
+    }
+
     public ACDCommandLoggerList getCommandLogger() {
         return this.commandLogger;
     }
@@ -91,19 +109,41 @@ public class ACD extends ListenerAdapter {
 
     @Override
     public void onSlashCommand(@NotNull SlashCommandEvent event) {
+        try {
+            slashCommands.onSlashCommand(event);
+        } catch (Exception e) {
+            if (this.messageReceivedExceptionHandler == null)
+                throw new RuntimeException(e);
+            else this.messageReceivedExceptionHandler.accept(e);
+        }
+    }
 
+    public synchronized void updateCommands() {
+        this.wantToUpdate = true;
+        internalUpdateCommands();
     }
 
     @Override
-    public void onReady(@NotNull ReadyEvent event) {
-        Guild testGuild = this.client.getGuildById(testGuildId);
-        if (testGuild != null) {
-            testGuild.updateCommands().addCommands(commands.getUpdatedCommnads()).queue();
-        } else {
-            System.err.println("There is no guild with id " + testGuildId);
-        }
-        this.client.updateCommands().addCommands(commands.getUpdatedCommnads()).queue();
+    public synchronized void onReady(@NotNull ReadyEvent event) {
+        this.isReady = true;
+        internalUpdateCommands();
     }
+
+    private void internalUpdateCommands() {
+        if (this.isReady && wantToUpdate) {
+            this.wantToUpdate = false;
+            if (testGuildId != 0) {
+                Guild testGuild = this.client.getGuildById(testGuildId);
+                if (testGuild != null) {
+                    testGuild.updateCommands().addCommands(slashCommands.getCommnads()).queue();
+                } else {
+                    System.err.println("Test guild doesn't exist");
+                }
+            }
+            this.client.updateCommands().addCommands(slashCommands.getCommnads()).queue();
+        }
+    }
+
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent event) {
@@ -172,6 +212,10 @@ public class ACD extends ListenerAdapter {
         commands.addCommand(command);
     }
 
+    public void addCommand(ACDSlashCommand command) {
+        slashCommands.addCommand(command);
+    }
+
     public void addOverlappingCommand(ACDMethodCommand command) {
         commands.addOverlappingCommand(command);
     }
@@ -211,5 +255,15 @@ public class ACD extends ListenerAdapter {
 
     public void removeChannelListener(ACDChannelListener listener) {
         getChannelListeners().removeListener(listener);
+    }
+
+    public void doInitializerException(Exception e) {
+        if (this.messageReceivedExceptionHandler == null)
+            throw new RuntimeException(e);
+        this.initializerExceptionHandler.accept(e);
+    }
+
+    public ACDChoiceProviderList getChoiceProviders() {
+        return this.choiceProviderList;
     }
 }
