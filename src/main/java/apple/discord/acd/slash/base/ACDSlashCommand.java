@@ -1,6 +1,7 @@
 package apple.discord.acd.slash.base;
 
 import apple.discord.acd.ACD;
+import apple.discord.acd.slash.ACDSlashCommandHandler;
 import apple.discord.acd.slash.group.ACDSlashSubGroupCommand;
 import apple.discord.acd.slash.runner.ACDSlashMethodCommand;
 import apple.discord.acd.slash.runner.SlashRunner;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ACDSlashCommand {
+public class ACDSlashCommand implements ACDSlashCommandHandler {
     private final String alias;
     private final String description;
     private final Collection<ACDSlashSubGroupCommand> subGroups = new ArrayList<>();
@@ -33,7 +34,7 @@ public class ACDSlashCommand {
             if (ACDSlashSubGroupCommand.class.isAssignableFrom(innerClass)) {
                 try {
                     @SuppressWarnings("unchecked") Class<? extends ACDSlashSubGroupCommand> castedInnerClass = (Class<? extends ACDSlashSubGroupCommand>) innerClass;
-                    subGroups.add(castedInnerClass.getDeclaredConstructor(getClass(), String.class, ACD.class).newInstance(this, path, acd));
+                    subGroups.add(castedInnerClass.getDeclaredConstructor(getClass(), String.class, ACD.class, ACDSlashCommandHandler.class).newInstance(this, path, acd, this));
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                     acd.doInitializerException(e);
                 }
@@ -47,7 +48,7 @@ public class ACDSlashCommand {
         acd.addCommand(this);
     }
 
-    public static SlashRunner getRunner(Object thingOfSuper, Class<?> classOfSuper, ACD acd, String path) {
+    public static SlashRunner getRunner(ACDSlashCommandHandler thingOfSuper, Class<?> classOfSuper, ACD acd, String path) {
         Method[] methods = classOfSuper.getDeclaredMethods();
         for (Method method : methods) {
             ACDSlashMethodCommand methodAnnotation = method.getAnnotation(ACDSlashMethodCommand.class);
@@ -59,14 +60,14 @@ public class ACDSlashCommand {
     }
 
 
-    public static Collection<ACDSlashSubCommand> getSubCommands(Object thingOfSuper /*no idea how this works*/, Class<?> classOfSuper, String path, ACD acd) {
+    public static Collection<ACDSlashSubCommand> getSubCommands(ACDSlashCommandHandler thingOfSuper /*no idea how this works*/, Class<?> classOfSuper, String path, ACD acd) {
         Collection<ACDSlashSubCommand> subCommands = new ArrayList<>();
         Class<?>[] innerClasses = classOfSuper.getClasses();
         for (Class<?> innerClass : innerClasses) {
             if (ACDSlashSubCommand.class.isAssignableFrom(innerClass)) {
                 try {
                     @SuppressWarnings("unchecked") Class<? extends ACDSlashSubCommand> castedInnerClass = (Class<? extends ACDSlashSubCommand>) innerClass;
-                    subCommands.add(castedInnerClass.getDeclaredConstructor(classOfSuper, String.class, ACD.class).newInstance(thingOfSuper, path, acd));
+                    subCommands.add(castedInnerClass.getDeclaredConstructor(classOfSuper, String.class, ACD.class, ACDSlashCommandHandler.class).newInstance(thingOfSuper, path, acd, thingOfSuper));
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                     acd.doInitializerException(e);
                 }

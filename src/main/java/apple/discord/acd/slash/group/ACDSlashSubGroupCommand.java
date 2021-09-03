@@ -1,6 +1,7 @@
 package apple.discord.acd.slash.group;
 
 import apple.discord.acd.ACD;
+import apple.discord.acd.slash.ACDSlashCommandHandler;
 import apple.discord.acd.slash.base.ACDSlashCommand;
 import apple.discord.acd.slash.runner.SlashRunner;
 import apple.discord.acd.slash.sub.ACDSlashSubCommand;
@@ -10,13 +11,15 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class ACDSlashSubGroupCommand {
+public class ACDSlashSubGroupCommand implements ACDSlashCommandHandler {
     private final String alias;
     private final String description;
     private final SlashRunner runner;
     private final Collection<ACDSlashSubCommand> subCommands;
+    private final ACDSlashCommandHandler parent;
 
-    public ACDSlashSubGroupCommand(String path, ACD acd) {
+    public ACDSlashSubGroupCommand(String path, ACD acd, ACDSlashCommandHandler parent) {
+        this.parent = parent;
         ACDSubGroupCommand annotation = getClass().getAnnotation(ACDSubGroupCommand.class);
         this.alias = annotation.alias();
         path = path + ACD.SLASH_PATH_SEPARATOR + alias;
@@ -25,6 +28,11 @@ public class ACDSlashSubGroupCommand {
 
         // register all sub-classes that are of type ACDSlashSubGroupCommand
         this.subCommands = ACDSlashCommand.getSubCommands(this, this.getClass(), path, acd);
+    }
+
+    @Override
+    public ACDSlashCommandHandler getParent() {
+        return parent;
     }
 
     public SubcommandGroupData getCommand() {
