@@ -23,7 +23,7 @@ task sourceJar(type: Jar) {
 }
 
 project.group = 'apple.acd'
-project.version = '2.1'
+project.version = '2.2'
 
 java {
     toolchain {
@@ -37,7 +37,7 @@ publishing {
             artifact sourceJar
             pom {
                 group = 'apple.acd'
-                version = 2.1
+                version = 2.2
                 name = 'DiscordACD'
             }
         }
