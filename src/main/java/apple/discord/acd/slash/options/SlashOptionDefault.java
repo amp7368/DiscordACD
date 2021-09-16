@@ -7,7 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.METHOD)
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SlashOptionDefault {
     OptionType optionType();
@@ -15,6 +15,11 @@ public @interface SlashOptionDefault {
     String name();
 
     String description();
+
+    /**
+     * used only for special cases like member vs user
+     */
+    SlashOptionType slashOptionType() default SlashOptionType.NORMAL;
 
     boolean isRequired() default true;
 

@@ -1,6 +1,7 @@
 package apple.discord.acd.slash;
 
 import apple.discord.acd.slash.options.converter.SlashChoiceConverter;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 
@@ -15,6 +16,7 @@ public class ACDChoiceProviderList {
         defaultConverters.put(SlashCommandEvent.class, (event, option) -> event);
         defaultConverters.put(MessageChannel.class, (event, option) -> event.getChannel());
         defaultConverters.put(String.class, (event, option) -> event.getCommandPath());
+        defaultConverters.put(Member.class, (event, option) -> event.getMember());
         choiceProviders.put("", defaultConverters);
     }
 

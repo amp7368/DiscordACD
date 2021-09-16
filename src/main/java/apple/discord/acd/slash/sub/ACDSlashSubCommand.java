@@ -29,7 +29,10 @@ public class ACDSlashSubCommand implements ACDSlashCommandHandler {
     }
 
     public SubcommandData getCommand() {
-        return new SubcommandData(alias, description);
+        SubcommandData subcommandData = new SubcommandData(alias, description);
+        if (runner != null)
+            subcommandData.addOptions(runner.getOptionsData());
+        return subcommandData;
     }
 
     public Collection<SlashRunner> getRunners() {
