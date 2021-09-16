@@ -17,7 +17,9 @@ public class OnInteractionCompleteMap {
         // this cast is okay because put() enforces this
         OnInteractionDo<?> interactionHandler = interactionMap.get(key);
         if (interactionHandler == null) return false;
-        ((OnInteractionDo<Consumed>) interactionHandler).onInteraction(consumed);
+        @SuppressWarnings("unchecked")
+        OnInteractionDo<Consumed> castedInteractionHandler = (OnInteractionDo<Consumed>) interactionHandler;
+        castedInteractionHandler.onInteraction(consumed);
         return true;
     }
 }

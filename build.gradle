@@ -1,10 +1,12 @@
 plugins {
     id 'java-library'
+    id 'java'
+    id 'maven-publish'
 }
 
 
-group 'apple.acd'
-version '1.0.BUILD-SNAPSHOT'
+//group 'apple.acd'
+//version '1.0.BUILD-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -12,8 +14,35 @@ repositories {
         name 'm2-dv8tion'
         url 'https://m2.dv8tion.net/releases'
     }
+    maven { url "https://jitpack.io" }
 }
 
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = "sources"
+}
+
+project.group = 'apple.acd'
+project.version = '2.0'
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(16))
+    }
+}
+publishing {
+    publications {
+        myPublication(MavenPublication) {
+            from components.java
+            artifact sourceJar
+            pom {
+                group = 'apple.acd'
+                version = 2.0
+                name = 'DiscordACD'
+            }
+        }
+    }
+}
 
 dependencies {
     implementation 'net.dv8tion:JDA:4.3.0_304'
@@ -27,31 +56,8 @@ test {
 
 
 jar {
-    java{
+    java {
         withSourcesJar()
         withJavadocJar()
-    }
-    destinationDirectory = new File('C:\\Users\\Aaron\\Desktop\\Idea\\Minecraft\\DiscordBots\\DiscordACD\\build\\')
-}
-
-def filesToCopy = copySpec {
-    from jar.getArchiveFile()
-}
-
-task jarAndCopyFiles {
-    dependsOn(jar)
-    doLast {
-        ['C:\\Users\\Aaron\\Desktop\\Idea\\SpotifyAnalysis\\lib\\',
-         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\CloverBot\\lib\\',
-         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\BuildBot\\lib\\',
-         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\Excursion\\lib\\',
-         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\HelloHeroku\\lib\\'].each { dest ->
-            {
-                copy {
-                    with filesToCopy
-                    into dest
-                }
-            }
-        }
     }
 }
