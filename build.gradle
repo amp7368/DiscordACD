@@ -56,10 +56,6 @@ test {
 
 
 jar {
-    java {
-        withSourcesJar()
-        withJavadocJar()
-    }
 }
 def filesToCopy = copySpec {
     from jar.getArchiveFile()
