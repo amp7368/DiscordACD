@@ -25,6 +25,7 @@ public enum DiscordEmoji {
     DOWN("\u2B07"),
     BIG_DOWN("\u23EC"),
     RED_X("\u274C"),
+    CHECK("\u2705"),
     WORKING("\uD83D\uDEE0"),
     LOOP("\uD83D\uDD04");
 
