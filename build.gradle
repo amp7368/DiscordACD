@@ -22,8 +22,8 @@ task sourceJar(type: Jar) {
     archiveClassifier = "sources"
 }
 
-project.group = 'apple.acd'
-project.version = '2.2'
+project.group = groupValue
+project.version = versionValue
 
 java {
     toolchain {
@@ -36,8 +36,8 @@ publishing {
             from components.java
             artifact sourceJar
             pom {
-                group = 'apple.acd'
-                version = 2.2
+                group = groupValue
+                version = versionValue
                 name = 'DiscordACD'
             }
         }
@@ -67,6 +67,7 @@ task jarAndCopyFiles {
         ['C:\\Users\\Aaron\\Desktop\\Idea\\SpotifyAnalysis\\lib\\',
          'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\CloverBot\\lib\\',
          'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\BuildBot\\lib\\',
+         'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\ExerciseChallenge\\lib\\',
          'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\Excursion\\lib\\',
          'C:\\Users\\Aaron\\Desktop\\Idea\\DiscordBots\\HelloHeroku\\lib\\'].each { dest ->
             {

@@ -83,14 +83,16 @@ public class ACDSlashCommand implements ACDSlashCommandHandler {
         for (ACDSlashSubGroupCommand subGroup : this.subGroups) {
             subGroupsCommandData.add(subGroup.getCommand());
         }
-        command.addSubcommandGroups(subGroupsCommandData);
+        if (!subGroupsCommandData.isEmpty())
+            command.addSubcommandGroups(subGroupsCommandData);
 
         // add subCommands
         Collection<SubcommandData> subcommandsData = new ArrayList<>();
         for (ACDSlashSubCommand subCommand : this.subCommands) {
             subcommandsData.add(subCommand.getCommand());
         }
-        command.addSubcommands(subcommandsData);
+        if (!subcommandsData.isEmpty())
+            command.addSubcommands(subcommandsData);
 
         // set the permissions of this
         command.setDefaultEnabled(!isPermissionRequired);

@@ -17,6 +17,7 @@ public class ACDChoiceProviderList {
         defaultConverters.put(MessageChannel.class, (event, option) -> event.getChannel());
         defaultConverters.put(String.class, (event, option) -> event.getCommandPath());
         defaultConverters.put(Member.class, (event, option) -> event.getMember());
+        defaultConverters.put(Boolean.class, (event, option) -> event.getMember());
         choiceProviders.put("", defaultConverters);
     }
 

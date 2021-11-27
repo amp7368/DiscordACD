@@ -18,8 +18,9 @@ public record ACDParameterConverterPattern(String splitter,
         for (String i : input.split(splitter)) {
             if (matcher.apply(i)) matches.add(i);
             else {
-                if (!skippedSplitter) {
+                if (skippedSplitter) {
                     newInput.append(splitter);
+                } else {
                     skippedSplitter = true;
                 }
                 newInput.append(i);
